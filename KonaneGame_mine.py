@@ -1,7 +1,8 @@
+from PlayKonane import PlayKonane
 from Tile import Tile
 
 
-class KonaneGame:
+class KonaneGame_mine:
     def __init__(self):
         NotImplemented
 
@@ -93,7 +94,7 @@ class KonaneGame:
     def get_moves_at_tile(self, board, tile, player):
         moves = self.generate_all_possible_moves(board, player)
         valid_moves_at_tile = []
-        print(moves)
+        # print(moves)
         for move in moves:
             if move[0] == tile.row and move[1] == tile.col:
                 valid_tile = board.game_board[move[2]][move[3]]
@@ -122,12 +123,79 @@ class KonaneGame:
     def evaluate(self, board, color, terminal_value=0):
 
         value = 0
-        valid_moves_color = self.generate_all_possible_moves(board, color)
-        valid_moves_opponent = self.generate_all_possible_moves(board, self.opponent(color))
+        #### given evaluate function:
+        # valid_moves_color = self.generate_all_possible_moves(board, color)
+        # valid_moves_opponent = self.generate_all_possible_moves(board, self.opponent(color))
+        #
+        # value += (10 * len(valid_moves_color))
+        # value -= (10 * len(valid_moves_opponent))
 
-        value += (10 * len(valid_moves_color))
-        value -= (10 * len(valid_moves_opponent))
-
+        #### my evaluate function:
         value += terminal_value
+        black = 0
+        white = 0
+        for row in board.game_board:  # calculating number of black and white pieces in board
+            for tile in row:
+                if tile.piece == 1:
+                    white += 1
+                elif tile.piece == 2:
+                    black += 1
+
+        if black == 0 and white == 0:  # game is finished
+            return 0
+        if (black == 0 and white > 0 and color == 1) or (
+                white == 0 and black > 0 and color == 2):  # opponent has no tiles left
+            return 1000
+
+        difference = abs(black - white)
+
+        if (color == 1 and white > black) or (color == 2 and black > white):
+            value += difference * 2
+
+        if (white >= black and color == 1) or (white <= black and color == 2):  # white turn and more tiles than black
+            value += (10 * difference)
+        else:
+            value -= (10 * difference)
+
+        black_possible_moves = len(self.generate_all_possible_moves(board, 2))
+        white_possible_moves = len(self.generate_all_possible_moves(board, 1))
+
+        difference_possible_moves = abs(black_possible_moves - white_possible_moves)
+
+        if (color == 1 and white_possible_moves > black_possible_moves) or (
+                color == 2 and white_possible_moves < black_possible_moves):
+            value += (10 * difference_possible_moves)
+
+        black_corner = 0
+        white_corner = 0
+        row_counter = 0
+        col_counter = 0
+        for row in board.game_board:
+            for tile in row:
+                if row_counter == 0 and col_counter == 0:
+                    if tile.piece == 1:
+                        white_corner += 1
+                    elif tile.piece == 2:
+                        black_corner += 1
+                if row_counter == 0 and col_counter == 5:
+                    if tile.piece == 1:
+                        white_corner += 1
+                    elif tile.piece == 2:
+                        black_corner += 1
+                if row_counter == 5 and col_counter == 0:
+                    if tile.piece == 1:
+                        white_corner += 1
+                    elif tile.piece == 2:
+                        black_corner += 1
+                if row_counter == 5 and col_counter == 5:
+                    if tile.piece == 1:
+                        white_corner += 1
+                    elif tile.piece == 2:
+                        black_corner += 1
+                col_counter += 1
+            row_counter += 1
+        difference_corners = abs(black_corner - white_corner)
+        if (black_corner > white_corner and color == 2) or (black_corner < white_corner and color == 1):
+            value += (20 * difference_corners)
 
         return value
